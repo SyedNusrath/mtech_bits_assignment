@@ -4,6 +4,7 @@ import numpy as np
 from scipy.linalg import solve
 from scipy.sparse import dia_matrix,diags
 from scipy.linalg import lu
+import math
 
 def gauss_siedel(A, B, x, n):
     L=np.tril(A)
@@ -27,13 +28,50 @@ def gauss_jacobi(A, B, x, n):
     all_val = create_iteration_df(append_val)
     return x,all_val
 
+def gauss_jacobi_earlystopping(A, B, x, early_stopping_per,max_iteration ):
+    D=diags(A.diagonal() ).toarray()
+    R = A-D
+    append_val = []
+    ANS = solve(A, B)
+    esc = 1
+    i = 0
+    while esc != 0:
+        x = np.dot(np.linalg.inv(D), B - np.dot(R, x))
+        append_val.append(x)
+        esc = np.sum(np.abs(((ANS-x)/ANS)*100)>early_stopping_per)
+        i = i + 1
+        if i == max_iteration:
+            break
+    print(f"Iterations completed {i}, Early stopping value {esc}")
+    all_val = create_iteration_df(append_val)
+    return x,all_val
+
+def gauss_siedel_earlystopping(A, B, x, early_stopping_per,max_iteration):
+    L=np.tril(A)
+    U=A-L
+    append_val = []
+    ANS = solve(A, B)
+    esc = 1
+    i = 0
+    while esc != 0:
+        x = np.dot(np.linalg.inv(L), B - np.dot(U, x))
+        append_val.append(x)
+        esc = np.sum(np.abs(((ANS-x)/ANS)*100)>early_stopping_per)
+        i = i + 1
+        if i == max_iteration:
+            break
+    print(f"Iterations completed {i}, Early stopping value {esc}")
+    all_val = create_iteration_df(append_val)
+    return x,all_val
+
+
 def create_iteration_df(append_val):
     all_val = pd.DataFrame(append_val)
     all_val.columns = [f'x{col}' for col in all_val.columns.tolist()]
     all_val.index = all_val.index+1
     return all_val.T
 
-def solve_equations(A,B, n=100,method='simple'):
+def solve_equations(A,B, n=100,method='simple',if_earlystopping=True,early_stopping_per=1):
     '''
     This Function solves system of matrices
     '''
@@ -52,10 +90,16 @@ def solve_equations(A,B, n=100,method='simple'):
     if method == 'simple':
         return solve(A, B),None
     elif method == 'jacobi':
-        return gauss_jacobi(A, B, x, n)
-    
+        if if_earlystopping:
+            return gauss_jacobi_earlystopping(A, B, x, early_stopping_per,n)
+        else:
+            return gauss_jacobi(A, B, x, n)
+
     elif method == 'siedel':
-        return gauss_siedel(A, B, x, n)  
+        if if_earlystopping:
+            return gauss_siedel_earlystopping(A, B, x, early_stopping_per,n)
+        else:
+            return gauss_siedel(A, B, x, n)
     else:
         print("Wrong method is mentioned: valid methods are simple,siedel and jacobi")
         print("Now solving using simple method")
@@ -198,6 +242,18 @@ def get_nonds_matrix(row_num,col_num,precision=4,method = 'siedel',iterations = 
         B = np.random.rand(len(A))
     return A,B
 
+def convertToSig(a_number,significant_digits):
+    if(type(a_number) == np.ndarray):
+        for idx,i in  np.ndenumerate(a_number):
+            if(a_number[idx]!=0):
+                a_number[idx] = round(a_number[idx], significant_digits - int(math.floor(math.log10(abs(a_number[idx])))) - 1)
+        return(a_number)    
+    elif(a_number != 0.):
+        rounded_number =  round(a_number, significant_digits - int(math.floor(math.log10(abs(a_number)))) - 1)
+        return(rounded_number)
+    else:
+        return(a_number)
+
 def gauss_elimination_pivot(A, f,digits):
     A=np.around(A,digits)
     f=np.around(f,digits)
@@ -213,27 +269,26 @@ def gauss_elimination_pivot(A, f,digits):
  #Caluculating the LU using Pivoting
     n = len(f)
     for i in range(0,n-1):     # Step - Looping through the columns of the matrix
-        
         if np.abs(A[i,i])==0:
             for k in range(i+1,n):
                 if np.abs(A[k,i])>np.abs(A[i,i]):
                     A[[i,k]]=A[[k,i]]             # Step Swapping ith and kth rows to each other
                     f[[i,k]]=f[[k,i]]
                     break
-                    
         for j in range(i+1,n):     # Loop through rows below diagonal for each column
-            m = A[j,i]/A[i,i]
-            A[j,:] = A[j,:] - m*A[i,:]
-            f[j] = f[j] - m*f[i]          
+            m = convertToSig(A[j,i]/A[i,i],digits)
+            A[j,:] = convertToSig(A[j,:] - convertToSig(m*A[i,:],digits),digits)
+            f[j] = convertToSig(f[j] - convertToSig(m*f[i],digits),digits)        
  #Caluculating the final output
     n = f.size
     x = np.zeros(n)             # Initialize the solution vector, x, to zero
-    x[n-1] = f[n-1]/A[n-1,n-1]    # Solve for last entry first
+    x[n-1] = convertToSig(f[n-1]/A[n-1,n-1],digits)    # Solve for last entry first
     for i in range(n-2,-1,-1):      # Loop from the end to the beginning
         sum_ = 0
         for j in range(i+1,n):        # For known x values, sum and move to rhs
-            sum_ = sum_ + A[i,j]*x[j]
-        x[i] = (f[i] - sum_)/A[i,i]
+            sum_ = convertToSig(sum_ + A[i,j]*x[j],digits)
+        sum_ = convertToSig(sum_,digits)
+        x[i] = convertToSig((f[i] - sum_)/A[i,i],digits)
     print("Solution is as below:")
     return x
 
@@ -257,17 +312,17 @@ def gauss_elimination_without_pivot(A, f,digits):
                 print("Error: Zero on diagonal!")
                 print("Need algorithm with pivoting")
                 break
-            m = A[j,i]/A[i,i]
-            A[j,:] = A[j,:] - m*A[i,:]
-            f[j] = f[j] - m*f[i]
+            m = convertToSig(A[j,i]/A[i,i],digits)
+            A[j,:] = convertToSig(A[j,:] - convertToSig(m*A[i,:],digits),digits)
+            f[j] = convertToSig(f[j] - convertToSig(m*f[i],digits),digits)
     #Using Back Substitution
     n = f.size
     x = np.zeros(n)             # Initialize the solution vector, x, to zero
-    x[n-1] = f[n-1]/A[n-1,n-1]    # Solve for last entry first
+    x[n-1] = convertToSig(f[n-1]/A[n-1,n-1],digits)   # Solve for last entry first
     for i in range(n-2,-1,-1):      # Loop from the end to the beginning
         sum_ = 0
         for j in range(i+1,n):        # For known x values, sum and move to rhs
-            sum_ = sum_ + A[i,j]*x[j]
-        x[i] = (f[i] - sum_)/A[i,i]
+            sum_ =convertToSig(sum_ + convertToSig(A[i,j]*x[j],digits),digits)
+        x[i] = convertToSig(((f[i] - sum_)/A[i,i]),digits)
     print("\nSolution is as below:")
     return x
