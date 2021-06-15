@@ -6,15 +6,17 @@ from scipy.sparse import dia_matrix,diags
 from scipy.linalg import lu
 import math
 
-def gauss_siedel(A, B, x, n):
+def gauss_siedel(A, B, x, n,precision):
     L=np.tril(A)
     U=A-L
     append_val = []
     for i in range(n):
         x = np.dot(np.linalg.inv(L), B - np.dot(U, x))
+        x = convertToSig(x,precision)
         print(x)
         append_val.append(x)
     all_val = create_iteration_df(append_val)
+    
     return x,all_val
 
 def gauss_jacobi(A, B, x, n):
@@ -23,12 +25,13 @@ def gauss_jacobi(A, B, x, n):
     append_val = []
     for i in range(n):
         x = np.dot(np.linalg.inv(D), B - np.dot(R, x))
+        x = convertToSig(x,precision)
         print(x)
         append_val.append(x)
     all_val = create_iteration_df(append_val)
     return x,all_val
 
-def gauss_jacobi_earlystopping(A, B, x, early_stopping_per,max_iteration ):
+def gauss_jacobi_earlystopping(A, B, x, early_stopping_per,max_iteration,precision ):
     D=diags(A.diagonal() ).toarray()
     R = A-D
     append_val = []
@@ -37,6 +40,7 @@ def gauss_jacobi_earlystopping(A, B, x, early_stopping_per,max_iteration ):
     i = 0
     while esc != 0:
         x = np.dot(np.linalg.inv(D), B - np.dot(R, x))
+        x = convertToSig(x,precision)
         append_val.append(x)
         esc = np.sum(np.abs(((ANS-x)/ANS)*100)>early_stopping_per)
         i = i + 1
@@ -46,7 +50,7 @@ def gauss_jacobi_earlystopping(A, B, x, early_stopping_per,max_iteration ):
     all_val = create_iteration_df(append_val)
     return x,all_val
 
-def gauss_siedel_earlystopping(A, B, x, early_stopping_per,max_iteration):
+def gauss_siedel_earlystopping(A, B, x, early_stopping_per,max_iteration,precision):
     L=np.tril(A)
     U=A-L
     append_val = []
@@ -55,6 +59,7 @@ def gauss_siedel_earlystopping(A, B, x, early_stopping_per,max_iteration):
     i = 0
     while esc != 0:
         x = np.dot(np.linalg.inv(L), B - np.dot(U, x))
+        x = convertToSig(x,precision)
         append_val.append(x)
         esc = np.sum(np.abs(((ANS-x)/ANS)*100)>early_stopping_per)
         i = i + 1
@@ -71,7 +76,7 @@ def create_iteration_df(append_val):
     all_val.index = all_val.index+1
     return all_val.T
 
-def solve_equations(A,B, n=100,method='simple',if_earlystopping=True,early_stopping_per=1):
+def solve_equations(A,B, n=100,method='simple',if_earlystopping=True,early_stopping_per=1,precision=5):
     '''
     This Function solves system of matrices
     '''
@@ -91,15 +96,15 @@ def solve_equations(A,B, n=100,method='simple',if_earlystopping=True,early_stopp
         return solve(A, B),None
     elif method == 'jacobi':
         if if_earlystopping:
-            return gauss_jacobi_earlystopping(A, B, x, early_stopping_per,n)
+            return gauss_jacobi_earlystopping(A, B, x, early_stopping_per,n,precision)
         else:
-            return gauss_jacobi(A, B, x, n)
+            return gauss_jacobi(A, B, x, n,precision)
 
     elif method == 'siedel':
         if if_earlystopping:
-            return gauss_siedel_earlystopping(A, B, x, early_stopping_per,n)
+            return gauss_siedel_earlystopping(A, B, x, early_stopping_per,n,precision)
         else:
-            return gauss_siedel(A, B, x, n)
+            return gauss_siedel(A, B, x, n,precision)
     else:
         print("Wrong method is mentioned: valid methods are simple,siedel and jacobi")
         print("Now solving using simple method")
@@ -240,6 +245,7 @@ def get_nonds_matrix(row_num,col_num,precision=4,method = 'siedel',iterations = 
         B = None
     else:
         B = np.random.rand(len(A))
+        B = convertToSig(B,precision)
     return A,B
 
 def convertToSig(a_number,significant_digits):
