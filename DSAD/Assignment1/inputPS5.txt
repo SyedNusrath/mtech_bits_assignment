@@ -1,3 +1,5 @@
+Company: ce
+No of operations: 6
 DETAIL ce
 ACQUIRED:aviation BY:ce
 ACQUIRED:power BY:ce

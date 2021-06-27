@@ -156,11 +156,10 @@ class dsad_assignment1:
     def run_job(self):
         for content in self.contents:
             action = content.split(':')[0].split(' ')[0].strip()
-            if self.all_oper <= self.num_oper:
+            if self.all_oper < self.num_oper:
                 if action == 'DETAIL':
                     company_name = content.split(':')[0].split(' ')[1].strip()
                     self.detail(company_name)
-
                 elif action == 'ACQUIRED':
                     acquired_company = content.split(':')[1].split(' ')[0].strip()
                     parent_company = content.split(':')[-1].strip()
@@ -168,13 +167,18 @@ class dsad_assignment1:
                 elif  action == 'RELEASE':
                     released_company = content.split(':')[0].split(' ')[1].strip()
                     self.release(released_company)
-
+                elif action == 'Company':
+                    first_node_name = content.split(':')[1].strip()
+                    self.first_node = TreeNode(first_node_name)
+                elif action == 'No':
+                    num_oper = content.split(':')[1].strip()
+                    self.num_oper = int(num_oper)
                 else:
-                    print(f"WRONG action : {action} mentioned in the file")
+                    print(f"Unknown action : {action} mentioned in the file")
         self.outputfile.close()
 
 if __name__ == "__main__":
     input_path = r".\\inputPS5.txt"
     output_path = r".\\outputPS5.txt"
-    da = dsad_assignment1(input_path,output_path,first_node_name='ce')
+    da = dsad_assignment1(input_path,output_path,first_node_name='ce',num_oper=100)
     da.run_job()
