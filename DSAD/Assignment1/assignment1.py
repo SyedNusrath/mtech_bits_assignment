@@ -1,23 +1,25 @@
 import time
 from collections import defaultdict
 class Node:
-    """
-    Node 
-    """
+    ''' Each node has its data and a pointer that points to next node '''
     def __init__(self, value=None):
         self.value = value
         self.next = None
     
     def __str__(self):
+        '''represents the class objects as a string'''
         return str(self.value)
 
+
 class LinkedList:
+    ''' Defining linked list '''
     def __init__(self):
         self.head = None
         self.tail = None
     
 class Queue:
     def __init__(self):
+        '''Initialize Queue by calling linked list'''
         self.linkedList = LinkedList()
     
     def __str__(self):
@@ -25,6 +27,7 @@ class Queue:
         return ' '.join(values)
     
     def enqueue(self, value):
+        '''This function adds an item to the rear end of the queue '''
         newNode = Node(value)
         if self.linkedList.head == None:
             self.linkedList.head = newNode
@@ -34,12 +37,14 @@ class Queue:
             self.linkedList.tail = newNode
     
     def isEmpty(self):
+        ''' Return True if the queue is empty, False otherwise '''
         if self.linkedList.head == None:
             return True
         else:
             return False
     
     def dequeue(self):
+        ''' This function removes an item from the front end of the queue '''
         if self.isEmpty():
             return "There is not any node in the Queue"
         else:
@@ -52,22 +57,26 @@ class Queue:
             return tempNode
     
     def peek(self):
+        ''' This function helps to see the first element at the fron end of the queue '''
         if self.isEmpty():
             return "There is not any node in the Queue"
         else:
             return self.linkedList.head
     
     def delete(self):
+        ''' This function deletes an item from the front end of the queue'''
         self.linkedList.head = None
         self.linkedList.tail = None
 
 class TreeNode:
+    ''' Defining Tree Node with left child and right child'''
     def __init__(self, data):
         self.data = data
         self.leftChild = None
         self.rightChild = None
 
 def search_bt(rootNode, nodeValue):
+    ''' This function search for node value at given(root) node '''
     if not rootNode:
         return "The BT does not exist"
     else:
@@ -85,6 +94,7 @@ def search_bt(rootNode, nodeValue):
         return "Not found"
 
 def insert_node_bt(rootNode, newNode):
+     ''' This function insert new node at given(root) node '''
     if not rootNode:
         rootNode = newNode
     else:
@@ -104,12 +114,14 @@ def insert_node_bt(rootNode, newNode):
                 return "Successfully Inserted"
 
 def delete_bt(rootNode):
+    ''' This function deletes given node '''
     rootNode.data = None
     rootNode.leftChild = None
     rootNode.rightChild = None
     return "The BT has been successfully deleted" 
 
 class dsad_assignment1:
+    ''' Defining DSAD Assignment object'''
     def __init__(self,input_path,output_path,first_node_name='ce',num_oper = 10):
         self.input_path = input_path
         self.output_path = output_path
@@ -124,6 +136,7 @@ class dsad_assignment1:
         self.all_oper = 0
 
     def detail(self,company_name):
+        ''' printing the details of the company from the linked list '''
         self.print(f"DETAIL:{company_name}")
         childlist = self.company_track[company_name]
         self.print(f"Acquired companies: {','.join(childlist) if len(childlist) > 0 else 'none'}")
@@ -131,6 +144,7 @@ class dsad_assignment1:
         self.all_oper = self.all_oper + 1
 
     def acquire(self,parent_company,acquired_company):
+        ''' Acquiring/Updating the details of the company in the linked list '''
         if search_bt(self.first_node, acquired_company) != 'Success':
             acqobj = TreeNode(acquired_company)
             self.tree_obj.update({acquired_company:acqobj})
@@ -142,6 +156,7 @@ class dsad_assignment1:
         self.all_oper = self.all_oper + 1
     
     def release(self,released_company):
+        ''' Releasing / Removing the details of the company in the linked list '''
         if search_bt(self.first_node, released_company) == 'Success':
             delete_bt(self.tree_obj[released_company])
             self.print(f"RELEASED SUCCESS: released {released_company} successfully.")
@@ -153,10 +168,14 @@ class dsad_assignment1:
         self.all_oper = self.all_oper + 1
 
     def print(self,verbose):
+        ''' printing output file '''
         print(verbose)
         self.outputfile.write(f"{verbose}\n")
 
     def run_job(self):
+        ''' Run job : this function helps to read the file and preform given action
+        like acquire, details and release operation and writes output to output file 
+        '''
         for content in self.contents:
             action = content.split(':')[0].split(' ')[0].strip()
             if self.all_oper < self.num_oper:
@@ -181,6 +200,7 @@ class dsad_assignment1:
         self.outputfile.close()
 
 if __name__ == "__main__":
+#     Defining input , output file path and initializing dsad_assignment1 object and calling run_job function to preform given action
     input_path = r".\\inputPS5.txt"
     output_path = r".\\outputPS5.txt"
     da = dsad_assignment1(input_path,output_path,first_node_name='ce',num_oper=100)
