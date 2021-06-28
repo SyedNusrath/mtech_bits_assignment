@@ -1,6 +1,9 @@
 import time
 from collections import defaultdict
 class Node:
+    """
+    Node 
+    """
     def __init__(self, value=None):
         self.value = value
         self.next = None
